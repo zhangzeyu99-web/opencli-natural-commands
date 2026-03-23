@@ -20,6 +20,20 @@
 | "B站排行榜" | 全站排行 |
 | "关注动态" | 关注的人发了什么 |
 
+### YouTube 视频分析
+
+| 你说的话 | 做什么 |
+|---------|--------|
+| "在YouTube搜 AI agent" | 搜索视频 |
+| "看看这个YouTube视频的信息" | 获取元数据（播放量/点赞/描述等） |
+| "把这个视频的字幕拿下来" | 获取字幕/转录文本 |
+| "分析一下这个YouTube视频" | 元数据+字幕 → AI 内容分析 |
+| "帮我把视频做成学习笔记" | AI 生成结构化笔记 |
+| "翻译这个英文视频" | 获取字幕 → AI 翻译 |
+| "整理成会议纪要" | 字幕+说话人 → 纪要格式 |
+| "对比分析这几个视频" | 多视频字幕 → AI 观点对比 |
+| "剪辑精华片段" | 联动 youtube-clipper 技能 |
+
 ### Cursor IDE
 
 | 你说的话 | 做什么 |
@@ -118,6 +132,15 @@ opencli bilibili ranking --limit 10           # 排行榜
 opencli bilibili following --limit 20         # 关注列表
 opencli bilibili user-videos UID --limit 10   # UP主视频
 opencli bilibili download BVxxx --output ./   # 下载视频
+```
+
+### YouTube
+
+```bash
+opencli youtube search "关键词" --limit 10    # 搜索视频
+opencli youtube video "URL或ID"               # 视频元数据
+opencli youtube transcript "URL" --lang en    # 获取字幕（指定语言）
+opencli youtube transcript "URL" --mode raw   # 原始时间戳模式
 ```
 
 ### Cursor

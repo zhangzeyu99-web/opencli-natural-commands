@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0] - 2026-03-23
+
+### Added
+- YouTube 视频分析：search, video, transcript 命令支持
+- YouTube 衍生功能：学习笔记生成、内容翻译、会议纪要、多视频对比、内容创作素材
+- YouTube-clipper 技能联动：视频剪辑、双语字幕、字幕烧录
+- references/youtube-commands.md: YouTube 完整命令参考和分析工作流
+
 ## [1.0.0] - 2026-03-23
 
 ### Added

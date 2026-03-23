@@ -21,6 +21,7 @@ tags: [opencli, cursor, bilibili, natural-language]
 当用户消息包含以下关键词时激活此技能：
 
 **B站**：B站、bilibili、热门、排行榜、弹幕、字幕、UP主、BV号、收藏、历史记录、动态、下载视频
+**YouTube**：YouTube、油管、视频分析、转录、字幕翻译、视频笔记、视频总结、剪辑、podcast
 **Cursor**：控制Cursor、发给Cursor、Composer、对话历史、导出对话、AI模型、截图
 
 ## B站命令
@@ -55,6 +56,36 @@ opencli cursor export --output ./export.md    # "导出对话" / "保存对话"
 opencli cursor screenshot                     # "截个图"
 ```
 
+## YouTube 命令
+
+当用户提到 YouTube、视频分析、字幕、转录、视频笔记、视频总结 等关键词时：
+
+```bash
+opencli youtube search "关键词" --limit 10   # "YouTube搜XXX"
+opencli youtube video "URL"                   # "看看这个视频的信息"
+opencli youtube transcript "URL"              # "获取字幕" / "视频转文字"
+opencli youtube transcript "URL" --lang en    # 指定语言
+opencli youtube transcript "URL" --mode raw   # 原始时间戳模式
+```
+
+### YouTube 视频分析工作流
+
+当用户说"分析这个YouTube视频"时，组合执行：
+1. `youtube video` → 获取元数据（标题、频道、播放量、描述、关键词）
+2. `youtube transcript` → 获取完整字幕文本
+3. AI 分析生成：内容大纲、核心要点、关键时间点、一句话总结
+
+### 衍生功能
+
+| 用户意图 | 做什么 |
+|---------|--------|
+| "帮我把视频做成学习笔记" | 元数据+字幕 → AI 生成结构化笔记 |
+| "翻译这个英文视频" | 获取英文字幕 → AI 逐段翻译 |
+| "整理成会议纪要" | 字幕(含说话人) → AI 生成纪要 |
+| "基于视频写篇文章" | 分析内容 → AI 生成文章大纲+素材 |
+| "对比分析这几个视频" | 分别获取字幕 → AI 对比观点 |
+| "剪辑精华片段" | 联动 youtube-clipper 技能 |
+
 ## 输出格式
 
 所有命令支持 `-f` 参数：`table`（默认）/ `json` / `yaml` / `md` / `csv`
@@ -73,4 +104,5 @@ opencli cursor screenshot                     # "截个图"
 - [B站命令详解](references/bilibili-commands.md)
 - [Cursor 命令详解](references/cursor-commands.md)
 - [常见问题排查](references/troubleshooting.md)
+- [YouTube 视频分析详解](references/youtube-commands.md)
 - [安全审查报告](references/security-audit.md)
