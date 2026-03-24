@@ -1,8 +1,8 @@
 # opencli-natural-commands
 
-> OpenClaw 技能：用自然语言操控 Cursor IDE 和 Bilibili (B站)
+> OpenClaw Skill: 用自然语言操控 Cursor IDE、Bilibili、HackerNews、微博等 50+ 平台
 
-不需要记命令，直接说人话，AI 自动翻译执行。
+不需要记命令，直接说人话，AI 自动翻译执行。基于 [opencli](https://github.com/jackwener/opencli) 引擎。
 
 ## 功能
 
@@ -12,174 +12,134 @@
 |---------|--------|
 | "B站现在什么最火" | 查看热门视频 |
 | "帮我在B站搜 AI 视频" | 搜索视频 |
-| "我最近在B站看了什么" | 查看观看历史 |
 | "把 BV1xxx 的字幕拿下来" | 获取视频字幕 |
 | "下载B站视频 BV1xxx" | 下载视频到本地 |
 | "看看这个UP主发了什么" | 查看UP主投稿 |
 | "我的B站收藏夹" | 查看收藏 |
-| "B站排行榜" | 全站排行 |
-| "关注动态" | 关注的人发了什么 |
 
 ### YouTube 视频分析
 
 | 你说的话 | 做什么 |
 |---------|--------|
-| "在YouTube搜 AI agent" | 搜索视频 |
-| "看看这个YouTube视频的信息" | 获取元数据（播放量/点赞/描述等） |
-| "把这个视频的字幕拿下来" | 获取字幕/转录文本 |
 | "分析一下这个YouTube视频" | 元数据+字幕 → AI 内容分析 |
 | "帮我把视频做成学习笔记" | AI 生成结构化笔记 |
 | "翻译这个英文视频" | 获取字幕 → AI 翻译 |
-| "整理成会议纪要" | 字幕+说话人 → 纪要格式 |
-| "对比分析这几个视频" | 多视频字幕 → AI 观点对比 |
-| "剪辑精华片段" | 联动 youtube-clipper 技能 |
 
-### Cursor IDE
+### 50+ 平台数据源
+
+HackerNews、V2EX、微博、小红书、知乎、微信读书、豆瓣、Reddit、Twitter、Medium、LinkedIn 等。
+
+### Cursor IDE 控制
 
 | 你说的话 | 做什么 |
 |---------|--------|
-| "Cursor 连上了吗" | 检查连接状态 |
 | "让 Cursor 帮我写个爬虫" | 发消息给 AI |
-| "看看 Cursor 回复了什么" | 读取对话 |
 | "用 Composer 重构代码" | 打开 Composer |
 | "把对话保存下来" | 导出为 Markdown |
-| "Cursor 用的什么模型" | 查看当前模型 |
-| "提取对话中的代码" | 提取代码块 |
+
+### 网页爬虫
+
+- 公开网页正文提取（web_fetch）
+- 反爬虫/Cloudflare 绕过（scrapling）
+- 动态渲染页面抓取
+
+### 网页截图
+
+通过 CDP 直连 Chrome 截图，B站操作后可就地截图无需切换技能。
+
+## v2.1.0 新特性
+
+- **Stealth 反检测**：内置 7 项反检测补丁，CDP 连接时自动注入
+- **50+ 平台**：新增 HackerNews (7命令)、微博搜索、V2EX 扩展、微信公众号下载
+- **网页爬虫**：集成 scrapling 反爬虫能力
+- **CDP 截图**：无需依赖 Gateway，直连 Chrome 截图
 
 ## 安装
 
-### 前置依赖
-
-1. **Node.js** >= 20
-2. **OpenCLI** — 全局安装：
-   ```bash
-   npm install -g @jackwener/opencli
-   ```
-3. **OpenClaw** — 已部署并运行
-
-### 安装技能到 OpenClaw
-
-**方式一：直接复制（推荐）**
+### 一键安装（推荐）
 
 ```bash
-# Linux / macOS
-mkdir -p ~/.openclaw/workspace/skills/opencli-natural-commands
-cp SKILL.md ~/.openclaw/workspace/skills/opencli-natural-commands/
-
-# Windows (PowerShell)
-mkdir -Force "$env:USERPROFILE\.openclaw\workspace\skills\opencli-natural-commands"
-Copy-Item SKILL.md "$env:USERPROFILE\.openclaw\workspace\skills\opencli-natural-commands\"
-```
-
-**方式二：从 GitHub 克隆**
-
-```bash
+# 克隆到 OpenClaw skills 目录
 cd ~/.openclaw/workspace/skills/
 git clone https://github.com/zhangzeyu99-web/opencli-natural-commands.git
-```
 
-安装完成后重启 Gateway 加载技能：
-
-```bash
+# 重启 Gateway
 openclaw gateway restart
 ```
 
-验证：
+### 前置依赖
 
 ```bash
-openclaw skills list | grep opencli
-# 应显示: ✓ ready | 📦 opencli-natural-commands
+# 1. 安装 opencli
+npm install -g @jackwener/opencli
+
+# 2. 安装 Browser Bridge 扩展
+#    下载: https://github.com/jackwener/opencli/releases
+#    在 chrome://extensions 中加载已解压的扩展
+
+# 3. 启动 Chrome 调试模式
+#    Windows:
+#    & "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9222
+#    macOS:
+#    /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9222
+#    Linux:
+#    google-chrome --remote-debugging-port=9222
+
+# 4. 设置环境变量
+#    Windows: $env:OPENCLI_CDP_ENDPOINT = "http://127.0.0.1:9222"
+#    Linux/macOS: export OPENCLI_CDP_ENDPOINT="http://127.0.0.1:9222"
+
+# 5. (可选) 网页爬虫依赖
+pip install "scrapling[fetchers]" websockets
+
+# 6. (可选) 视频下载
+pip install yt-dlp
 ```
 
-### 配置 B站功能
+### 配置 Cursor 控制
 
-1. 安装 [OpenCLI Browser Bridge 扩展](https://github.com/jackwener/opencli/releases)（下载 `opencli-extension.zip`，解压后在 `chrome://extensions` 中加载）
-2. Chrome 浏览器保持打开并登录 bilibili.com
-3. 下载视频需要额外安装 `yt-dlp`：
-   ```bash
-   pip install yt-dlp
-   ```
-
-### 配置 Cursor 控制功能
-
-1. 设置环境变量：
-   ```bash
-   # Windows PowerShell（永久）
-   [Environment]::SetEnvironmentVariable("OPENCLI_CDP_ENDPOINT", "http://127.0.0.1:9226", "User")
-
-   # Linux / macOS
-   echo 'export OPENCLI_CDP_ENDPOINT="http://127.0.0.1:9226"' >> ~/.bashrc
-   ```
-2. Cursor 启动时添加调试端口参数：
-   ```
-   --remote-debugging-port=9226
-   ```
-   Windows 下可修改 Cursor 桌面快捷方式的「目标」，末尾加上此参数。
-
-## 命令速查
-
-### B站
+Cursor 需要以调试端口启动：
 
 ```bash
-opencli bilibili hot --limit 10              # 热门视频
-opencli bilibili search "关键词" --limit 10   # 搜索
-opencli bilibili me                           # 我的信息
-opencli bilibili favorite                     # 收藏夹
-opencli bilibili history --limit 20           # 观看历史
-opencli bilibili feed --limit 10              # 关注动态
-opencli bilibili subtitle BVxxx               # 视频字幕
-opencli bilibili ranking --limit 10           # 排行榜
-opencli bilibili following --limit 20         # 关注列表
-opencli bilibili user-videos UID --limit 10   # UP主视频
-opencli bilibili download BVxxx --output ./   # 下载视频
+# 启动 Cursor 时添加参数
+cursor --remote-debugging-port=9226
+
+# 设置环境变量（Cursor 命令执行前切换）
+# Windows: $env:OPENCLI_CDP_ENDPOINT = "http://127.0.0.1:9226"
+# Linux/macOS: export OPENCLI_CDP_ENDPOINT="http://127.0.0.1:9226"
 ```
 
-### YouTube
+### 验证安装
 
 ```bash
-opencli youtube search "关键词" --limit 10    # 搜索视频
-opencli youtube video "URL或ID"               # 视频元数据
-opencli youtube transcript "URL" --lang en    # 获取字幕（指定语言）
-opencli youtube transcript "URL" --mode raw   # 原始时间戳模式
+opencli doctor          # 检查环境
+opencli bilibili hot    # 测试 B站
+opencli hackernews top  # 测试 HackerNews (无需浏览器)
 ```
 
-### Cursor
+## 与 chrome-browser-automation 的协调
 
-```bash
-opencli cursor status                         # 连接状态
-opencli cursor send "消息"                     # 发消息
-opencli cursor ask "问题"                      # 问答（等回复）
-opencli cursor read                           # 读对话
-opencli cursor composer "指令"                 # Composer
-opencli cursor model                          # 当前模型
-opencli cursor extract-code                   # 提取代码
-opencli cursor history                        # 对话历史
-opencli cursor export --output ./export.md    # 导出对话
-opencli cursor screenshot                     # 截图
-```
+本技能与 [chrome-browser-automation](https://github.com/zhangzeyu99-web/chrome-browser-automation) 共享同一个 Chrome CDP 端口 (9222)，职责分工：
 
-### 输出格式
+| 任务 | 使用技能 |
+|------|---------|
+| B站/YouTube/Cursor/爬虫 | **opencli-natural-commands** (本技能) |
+| 截图/AI搜索(Kimi/Gemini)/打开网页/表单 | **chrome-browser-automation** |
 
-所有命令支持 `-f` 参数：
-
-```bash
-opencli bilibili hot -f json    # JSON
-opencli bilibili hot -f yaml    # YAML
-opencli bilibili hot -f md      # Markdown
-opencli bilibili hot -f csv     # CSV
-opencli bilibili hot -f table   # 表格（默认）
-```
+两者不得同时操作 Chrome，串行执行即可。
 
 ## 安全说明
 
 - OpenCLI 复用 Chrome 已有登录态，**不存储任何密码**
 - 本地 daemon 仅绑定 `127.0.0.1`，外部不可访问
+- Stealth 补丁仅用于防检测，不修改页面内容
 - 代码开源，经过安全审查：[jackwener/opencli](https://github.com/jackwener/opencli)
 
 ## 致谢
 
 - [OpenCLI](https://github.com/jackwener/opencli) — 底层 CLI 引擎
-- [OpenClaw](https://docs.openclaw.ai/) — AI Agent 平台
+- [OpenClaw](https://openclaw.com) — AI Agent 平台
+- [scrapling](https://github.com/AhmedAltundas/scrapling) — 反爬虫框架
 
 ## License
 

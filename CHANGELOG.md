@@ -1,23 +1,23 @@
 # Changelog
 
-## [1.1.0] - 2026-03-23
+## v2.1.0 (2026-03-24)
 
-### Added
-- YouTube 视频分析：search, video, transcript 命令支持
-- YouTube 衍生功能：学习笔记生成、内容翻译、会议纪要、多视频对比、内容创作素材
-- YouTube-clipper 技能联动：视频剪辑、双语字幕、字幕烧录
-- references/youtube-commands.md: YouTube 完整命令参考和分析工作流
+### New Features
+- **Stealth Anti-Detection**: 7 browser stealth patches auto-injected on CDP connect (navigator.webdriver masking, chrome object stub, plugins/languages simulation, CDP trace cleanup)
+- **50+ Platform Adapters**: Added HackerNews (7 commands), Weibo search, V2EX expansion (5 new), WeChat article download, Xiaohongshu publish
+- **Web Scraping**: Integrated scrapling for anti-Cloudflare and dynamic page rendering
+- **CDP Screenshot**: Direct Chrome screenshot via CDP without requiring Gateway
 
-## [1.0.0] - 2026-03-23
+### Changes
+- Updated intent recognition rules to include HackerNews, V2EX, Weibo, Xiaohongshu keywords
+- Added `OPENCLI_CDP_ENDPOINT` as primary configuration for Chrome connection
+- Version bump to align with opencli v1.3.3 feature merge
 
-### Added
-- SKILL.md: OpenClaw 技能文件，支持 B站和 Cursor 自然语言指令
-- Bilibili 命令支持：hot, search, me, favorite, history, feed, subtitle, dynamic, ranking, following, user-videos, download
-- Cursor IDE 命令支持：status, send, ask, read, composer, model, extract-code, history, export, screenshot
-- 自然语言意图识别与命令映射
-- references/bilibili-commands.md: B站命令完整参考
-- references/cursor-commands.md: Cursor 命令完整参考
-- references/troubleshooting.md: 常见问题排查指南
-- references/security-audit.md: opencli v1.2.6 安全审查报告
-- scripts/install.sh: Linux/macOS 一键安装脚本
-- scripts/install.ps1: Windows 一键安装脚本（含 Cursor 调试端口自动配置）
+## v1.0.0 (2026-03-18)
+
+### Initial Release
+- B站 (Bilibili) commands: hot, search, subtitle, download, favorites, history
+- YouTube commands: search, video info, transcript
+- Cursor IDE control: send, ask, read, composer, export
+- Natural language intent recognition
+- Output format support: table, json, yaml, md, csv

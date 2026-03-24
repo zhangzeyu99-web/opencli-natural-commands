@@ -1,8 +1,8 @@
 ---
 name: opencli-natural-commands
-description: "用自然语言操控 Cursor IDE 和 Bilibili。当用户提到 B站/bilibili/热门/字幕/下载/Cursor控制/Composer/对话导出 等关键词时使用此技能。"
-version: 1.0.0
-tags: [opencli, cursor, bilibili, natural-language]
+description: "用自然语言操控 Cursor IDE、Bilibili、HackerNews、微博等 50+ 平台。当用户提到 B站/bilibili/热门/字幕/下载/Cursor控制/Composer/对话导出/爬取网页/HackerNews/微博/V2EX 等关键词时使用此技能。"
+version: 2.1.0
+tags: [opencli, cursor, bilibili, hackernews, weibo, natural-language, scraping, stealth]
 ---
 
 # OpenCLI 自然语言指令中心
@@ -12,9 +12,12 @@ tags: [opencli, cursor, bilibili, natural-language]
 ## 前置条件
 
 - `opencli` 已全局安装 (`npm install -g @jackwener/opencli`)
-- Chrome 浏览器已打开并登录 bilibili.com（B站命令需要）
-- Browser Bridge 扩展已安装（B站命令需要）
-- Cursor 以 `--remote-debugging-port=9226` 启动 + `OPENCLI_CDP_ENDPOINT=http://127.0.0.1:9226`（Cursor 命令需要）
+- Chrome 以 `--remote-debugging-port=9222` 启动
+- 环境变量 `OPENCLI_CDP_ENDPOINT=http://127.0.0.1:9222`
+- Browser Bridge 扩展已加载（B站等需浏览器的命令）
+- Cursor 命令需额外设置 `OPENCLI_CDP_ENDPOINT=http://127.0.0.1:9226`
+
+**Stealth 反检测**：内置 7 项反检测补丁（navigator.webdriver 隐藏、chrome 对象伪装、plugins 模拟、CDP 痕迹清理等），CDP 连接时自动注入，无需手动配置。
 
 ## 意图识别规则
 
@@ -23,6 +26,7 @@ tags: [opencli, cursor, bilibili, natural-language]
 **B站**：B站、bilibili、热门、排行榜、弹幕、字幕、UP主、BV号、收藏、历史记录、动态、下载视频
 **YouTube**：YouTube、油管、视频分析、转录、字幕翻译、视频笔记、视频总结、剪辑、podcast
 **Cursor**：控制Cursor、发给Cursor、Composer、对话历史、导出对话、AI模型、截图
+**更多平台**：HackerNews、V2EX、微博、小红书、知乎、微信读书、豆瓣、Reddit
 
 ## B站命令
 
@@ -58,8 +62,6 @@ opencli cursor screenshot                     # "截个图"
 
 ## YouTube 命令
 
-当用户提到 YouTube、视频分析、字幕、转录、视频笔记、视频总结 等关键词时：
-
 ```bash
 opencli youtube search "关键词" --limit 10   # "YouTube搜XXX"
 opencli youtube video "URL"                   # "看看这个视频的信息"
@@ -86,6 +88,74 @@ opencli youtube transcript "URL" --mode raw   # 原始时间戳模式
 | "对比分析这几个视频" | 分别获取字幕 → AI 对比观点 |
 | "剪辑精华片段" | 联动 youtube-clipper 技能 |
 
+## 更多平台命令
+
+opencli 内置 50+ 平台适配器，以下为常用的：
+
+```bash
+# HackerNews（7 命令）
+opencli hackernews new --limit 10       # 最新
+opencli hackernews best --limit 10      # 最佳
+opencli hackernews top --limit 10       # 热门
+opencli hackernews search "关键词"      # 搜索
+
+# 微博
+opencli weibo hot --limit 10            # 热搜
+opencli weibo search "关键词" --limit 10  # 搜索
+
+# V2EX（10+ 命令）
+opencli v2ex hot --limit 10             # 热门
+opencli v2ex latest --limit 10          # 最新
+opencli v2ex node "python" --limit 10   # 节点主题
+
+# 小红书
+opencli xiaohongshu search "关键词"     # 搜索
+opencli xiaohongshu download "URL"      # 下载笔记
+
+# 微信公众号
+opencli weixin download "文章URL"       # 下载公众号文章为 Markdown
+
+# 其他可用：zhihu, weread, douban, reddit, twitter, medium, linkedin...
+# 完整列表: opencli --help
+```
+
+## 网页内容抓取
+
+当用户需要获取网页正文、爬取数据时，按优先级执行：
+
+| 场景 | 方案 | 说明 |
+|------|------|------|
+| 公开网页正文 | `web_fetch` 内置工具 | 直接调用，无需命令 |
+| 反爬虫/Cloudflare | scrapling | `python -c "from scrapling.fetchers import StealthyFetcher; print(StealthyFetcher.fetch('URL', headless=True).get_text())"` |
+| 动态渲染页面 | scrapling DynamicFetcher | `python -c "from scrapling.fetchers import DynamicFetcher; print(DynamicFetcher.fetch('URL', network_idle=True).get_text())"` |
+| 以上均失败 | `web_search` 内置工具 | 搜索相关内容兜底 |
+
+## 网页截图
+
+通过 CDP 直接截取当前 Chrome 页面，无需切换到 chrome-browser-automation 技能。
+
+前提：Chrome 以 `--remote-debugging-port=9222` 运行。
+
+```python
+python -c "
+import json, base64, asyncio, websockets, urllib.request
+
+async def screenshot(output='screenshot.png'):
+    tabs = json.loads(urllib.request.urlopen('http://127.0.0.1:9222/json').read())
+    page = next(t for t in tabs if t['type'] == 'page')
+    async with websockets.connect(page['webSocketDebuggerUrl'], max_size=50*1024*1024) as ws:
+        await ws.send(json.dumps({'id':1, 'method':'Page.captureScreenshot', 'params':{'format':'png'}}))
+        r = json.loads(await ws.recv())
+        with open(output, 'wb') as f:
+            f.write(base64.b64decode(r['result']['data']))
+    print(f'Saved: {output}')
+
+asyncio.run(screenshot())
+"
+```
+
+需要 `pip install websockets`。
+
 ## 输出格式
 
 所有命令支持 `-f` 参数：`table`（默认）/ `json` / `yaml` / `md` / `csv`
@@ -98,11 +168,3 @@ opencli youtube transcript "URL" --mode raw   # 原始时间戳模式
 4. 涉及账号操作先确认
 5. 复合操作拆分执行（如"搜B站XXX然后下载第一个"= 搜索 + 下载两步）
 6. 下载操作告知文件保存位置和大小
-
-## 参考文档
-
-- [B站命令详解](references/bilibili-commands.md)
-- [Cursor 命令详解](references/cursor-commands.md)
-- [常见问题排查](references/troubleshooting.md)
-- [YouTube 视频分析详解](references/youtube-commands.md)
-- [安全审查报告](references/security-audit.md)
