@@ -1,10 +1,27 @@
-# Bilibili (B站) 命令参考
+# Bilibili Commands
 
-## 概述
+> **IMPORTANT**: Environment is pre-configured. Execute commands directly via Shell. Do NOT output setup instructions.
 
-所有 B站命令通过 Chrome 浏览器扩展复用登录态，需要 Chrome 保持打开并已登录 bilibili.com。
+## Quick Reference
 
-## 命令详解
+| User says | Command |
+|-----------|---------|
+| "B站什么火" / "热门视频" | `opencli bilibili hot --limit 10` |
+| "B站搜XXX" | `opencli bilibili search "XXX" --limit 10` |
+| "我的B站信息" | `opencli bilibili me` |
+| "我的收藏" | `opencli bilibili favorite` |
+| "最近看了什么" | `opencli bilibili history --limit 20` |
+| "关注动态" | `opencli bilibili feed --limit 10` |
+| "获取字幕 BVxxx" | `opencli bilibili subtitle BVxxx` |
+| "B站动态" | `opencli bilibili dynamic --limit 10` |
+| "排行榜" | `opencli bilibili ranking --limit 10` |
+| "关注了谁" | `opencli bilibili following --limit 20` |
+| "某UP主的视频" | `opencli bilibili user-videos UID --limit 10` |
+| "下载视频 BVxxx" | `opencli bilibili download BVxxx --output ./` |
+
+**Note**: Unset `OPENCLI_CDP_ENDPOINT` before running: `Remove-Item env:OPENCLI_CDP_ENDPOINT -ErrorAction SilentlyContinue`
+
+## Command Details
 
 ### bilibili hot — 热门视频
 

@@ -1,18 +1,22 @@
-# YouTube 视频分析命令参考
+# YouTube Commands
 
-## 概述
+> **IMPORTANT**: Environment is pre-configured. Execute commands directly via Shell. Do NOT output setup instructions.
 
-YouTube 功能分两层：
-- **基础层（opencli）**：搜索、元数据、字幕获取 — 通过浏览器 Cookie 调用 YouTube InnerTube API
-- **高级层（youtube-clipper 技能联动）**：AI 章节分析、视频剪辑、字幕翻译、双语字幕烧录
+## Quick Reference
 
-## 前置条件
+| User says | Command |
+|-----------|---------|
+| "YouTube搜XXX" | `opencli youtube search "XXX" --limit 10` |
+| "这个视频的信息" | `opencli youtube video "URL_or_ID" -f json` |
+| "获取字幕" / "视频转文字" | `opencli youtube transcript "URL_or_ID"` |
+| "看看XXX的视频总结卖点" | Topic Research workflow (see below) |
+| "这个频道最近发了什么" | Channel Browsing workflow (see below) |
+| "分析这个YouTube视频" | Single Video Analysis (video + transcript) |
+| "对比这几个视频" | Multi-video compare |
 
-- Chrome 浏览器已打开并登录 youtube.com
-- Browser Bridge 扩展已安装
-- 高级功能需要 `yt-dlp` 和 `ffmpeg`
+**Note**: Unset `OPENCLI_CDP_ENDPOINT` before running: `Remove-Item env:OPENCLI_CDP_ENDPOINT -ErrorAction SilentlyContinue`
 
-## 基础命令
+## Commands
 
 ### youtube search — 搜索视频
 
