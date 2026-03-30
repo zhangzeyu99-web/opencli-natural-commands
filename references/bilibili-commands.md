@@ -210,6 +210,14 @@ opencli bilibili download BV1xxx --quality 720p
 | Markdown | `-f md` | 文档输出 |
 | CSV | `-f csv` | 表格导入 |
 
-## 技术原理
+## Execution Rules (Bilibili-specific)
 
-B站命令使用 `Strategy.COOKIE` 策略，通过 Chrome 扩展复用浏览器的登录 Cookie，在浏览器上下文中调用 B站官方 API（含 WBI 签名），不需要存储任何凭据。
+1. Run commands SEQUENTIALLY — never parallel. Browser Bridge handles one request at a time.
+2. Default `--limit 10` when user doesn't specify.
+3. Summarize results in natural Chinese, don't dump raw output.
+4. For download: report file path and size after completion.
+5. `yt-dlp` required only for `bilibili download`. Other commands work without it.
+
+## Technical Notes
+
+Bilibili commands use `Strategy.COOKIE` — Chrome extension relays browser login cookies to call Bilibili's official API (with WBI signature). No credentials are stored.

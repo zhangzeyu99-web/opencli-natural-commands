@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0] - 2026-03-23
+
+### Changed
+- SKILL.md restructured as thin routing entry (~35 lines). Detailed content lazy-loaded from references/ on demand.
+- Each reference file is now self-contained with its own execution rules and technical notes.
+- Estimated context reduction: ~70% per invocation (only loads the module actually needed).
+
 ## [1.3.0] - 2026-03-23
 
 ### Changed

@@ -215,6 +215,13 @@ opencli cursor new
 
 模拟 `Ctrl+N` 创建新文件/标签。
 
-## 技术原理
+## Execution Rules (Cursor-specific)
 
-Cursor 基于 Electron (VS Code fork)，支持 Chrome DevTools Protocol。opencli 通过 CDP WebSocket 连接 Cursor 进程，使用 `Runtime.evaluate` 在页面上下文中执行 JavaScript 操作 DOM 元素（如 Lexical 编辑器），实现自动化控制。
+1. Requires `OPENCLI_CDP_ENDPOINT=http://127.0.0.1:9226` and Cursor launched with `--remote-debugging-port=9226`.
+2. Cursor commands do NOT go through Browser Bridge — they use CDP directly. They can run independently of bilibili/youtube commands.
+3. `cursor ask` is the recommended command for most interactions (send + wait + read in one call).
+4. Increase `--timeout` for complex prompts that take longer to generate.
+
+## Technical Notes
+
+Cursor is Electron-based (VS Code fork) with CDP support. opencli connects via CDP WebSocket to `Runtime.evaluate` JavaScript on Cursor's DOM (Lexical editor, Composer panel, etc.).
