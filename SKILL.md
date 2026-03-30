@@ -6,45 +6,54 @@ description: >
   (2) YouTube相关：搜索视频、视频分析、字幕转录、频道浏览、主题调研、视频对比
   (3) Cursor IDE相关：查询模型、发送消息、读取对话、Composer、导出对话、截图
   关键词：B站、bilibili、YouTube、油管、Cursor、Composer、模型、热门、字幕、视频
-version: 1.4.2
+version: 1.5.0
 tags: [opencli, cursor, bilibili, youtube, natural-language, video-analysis]
 ---
 
 # OpenCLI Natural Language Skill
 
-**This skill executes real commands via Shell to get live data. NEVER answer from training knowledge — always run the opencli command and return actual results.**
+**Execute opencli commands via Shell to get LIVE data. NEVER answer from training knowledge.**
 
-## Environment Status
+## Command Templates
 
-All tools are pre-installed and configured. **Execute commands directly — do NOT guide the user through setup.**
+**For Bilibili / YouTube** (must unset CDP endpoint first):
 
-- `opencli` v1.4.0 installed globally
-- Chrome Browser Bridge: connected
-- Cursor CDP: `OPENCLI_CDP_ENDPOINT` is set, Cursor is running with debug port
-- `OPENCLI_CDP_ENDPOINT` must NOT be set when running Bilibili/YouTube commands (unset it first if present in current shell session)
+```powershell
+$env:OPENCLI_CDP_ENDPOINT = $null; opencli bilibili hot --limit 10
+$env:OPENCLI_CDP_ENDPOINT = $null; opencli bilibili search "关键词" --limit 10
+$env:OPENCLI_CDP_ENDPOINT = $null; opencli youtube search "keyword" --limit 10
+$env:OPENCLI_CDP_ENDPOINT = $null; opencli youtube video "VIDEO_ID" -f json
+$env:OPENCLI_CDP_ENDPOINT = $null; opencli youtube transcript "VIDEO_ID"
+```
+
+**For Cursor** (must set CDP endpoint):
+
+```powershell
+$env:OPENCLI_CDP_ENDPOINT = "http://127.0.0.1:9224"; opencli cursor model
+$env:OPENCLI_CDP_ENDPOINT = "http://127.0.0.1:9224"; opencli cursor read
+$env:OPENCLI_CDP_ENDPOINT = "http://127.0.0.1:9224"; opencli cursor ask "question"
+$env:OPENCLI_CDP_ENDPOINT = "http://127.0.0.1:9224"; opencli cursor send "message"
+$env:OPENCLI_CDP_ENDPOINT = "http://127.0.0.1:9224"; opencli cursor composer "prompt"
+$env:OPENCLI_CDP_ENDPOINT = "http://127.0.0.1:9224"; opencli cursor export --output ./export.md
+```
+
+**CRITICAL**: Always prefix commands with the env var line as shown above. The Shell session may not have the correct environment.
 
 ## Routing Table
 
-Match user keywords → read the corresponding reference file → **skip setup sections, go straight to commands and execute them**.
+For detailed command parameters and workflows, read the corresponding reference file:
 
-| Keywords | Read | Capabilities |
-|----------|------|-------------|
-| B站, bilibili, 热门, 排行榜, 字幕, UP主, BV号, 收藏, 历史, 动态, 下载视频 | [references/bilibili-commands.md](references/bilibili-commands.md) | 12 commands: hot, search, me, favorite, history, feed, subtitle, dynamic, ranking, following, user-videos, download |
-| YouTube, 油管, 视频分析, 转录, 视频总结, 调研, 频道, 卖点, 评测, 对比, podcast | [references/youtube-commands.md](references/youtube-commands.md) | 3 commands + topic research, channel browsing, transcript fallback |
-| Cursor, Composer, 对话, 导出, AI模型, 截图 | [references/cursor-commands.md](references/cursor-commands.md) | 10 commands: status, send, ask, read, composer, model, extract-code, history, export, screenshot |
+| Keywords | Reference |
+|----------|-----------|
+| B站, bilibili, 热门, 排行榜, 字幕, UP主, BV号, 收藏, 历史, 动态, 下载视频 | [references/bilibili-commands.md](references/bilibili-commands.md) |
+| YouTube, 油管, 视频分析, 转录, 视频总结, 调研, 频道, 卖点, 评测, 对比 | [references/youtube-commands.md](references/youtube-commands.md) |
+| Cursor, Composer, 对话, 导出, AI模型, 截图 | [references/cursor-commands.md](references/cursor-commands.md) |
 
-If multiple modules are needed (e.g. "compare B站 and YouTube videos"), read both reference files.
+## Execution Rules
 
-## Global Execution Rules
-
-1. **ALWAYS execute opencli commands via Shell tool to get real data. NEVER answer from memory/training knowledge.**
-2. Default `--limit 10` when unspecified
-3. **SEQUENTIAL ONLY**: Run opencli browser commands one at a time. Never parallel.
-4. On failure: explain in Chinese with fix suggestion
-5. On success: summarize in natural language, don't dump raw output
-6. Output format: all commands support `-f table|json|yaml|md|csv`
-7. Confirm before account-sensitive operations
-
-## Troubleshooting
-
-If commands fail, read [references/troubleshooting.md](references/troubleshooting.md).
+1. **ALWAYS run opencli via Shell. NEVER answer from training knowledge.**
+2. **ALWAYS prefix with env var** as shown in Command Templates above.
+3. Run commands SEQUENTIALLY, one at a time. Never parallel.
+4. Default `--limit 10` when unspecified.
+5. On success: summarize in Chinese, don't dump raw output.
+6. On failure: explain in Chinese with fix suggestion. Read [references/troubleshooting.md](references/troubleshooting.md).
