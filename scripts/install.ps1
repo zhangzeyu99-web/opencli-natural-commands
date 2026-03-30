@@ -7,6 +7,7 @@ $SkillName = "opencli-natural-commands"
 $OpenclawDir = "$env:USERPROFILE\.openclaw"
 $SkillsDir = "$OpenclawDir\workspace\skills\$SkillName"
 $ScriptDir = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
+$CursorPort = "9224"
 
 Write-Host "=== $SkillName Installer ===" -ForegroundColor Cyan
 Write-Host ""
@@ -16,13 +17,11 @@ try {
     $nodeVer = (node -v) -replace 'v', ''
     $major = [int]($nodeVer.Split('.')[0])
     if ($major -lt 20) {
-        Write-Host "[ERROR] Node.js >= 20 required (found v$nodeVer)" -ForegroundColor Red
-        exit 1
+        Write-Host "[ERROR] Node.js >= 20 required (found v$nodeVer)" -ForegroundColor Red; exit 1
     }
     Write-Host "[OK] Node.js v$nodeVer" -ForegroundColor Green
 } catch {
-    Write-Host "[ERROR] Node.js not found. Install Node.js >= 20 first." -ForegroundColor Red
-    exit 1
+    Write-Host "[ERROR] Node.js not found. Install Node.js >= 20 first." -ForegroundColor Red; exit 1
 }
 
 # Step 2: Install opencli
@@ -36,55 +35,71 @@ try {
     Write-Host "[OK] opencli v$ver installed" -ForegroundColor Green
 }
 
-# Step 3: Copy skill to OpenClaw
+# Step 3: Copy entire skill directory (SKILL.md + references/) to OpenClaw
 if (-not (Test-Path $OpenclawDir)) {
-    Write-Host "[ERROR] OpenClaw not found at $OpenclawDir. Install OpenClaw first." -ForegroundColor Red
-    exit 1
+    Write-Host "[ERROR] OpenClaw not found at $OpenclawDir. Install OpenClaw first." -ForegroundColor Red; exit 1
 }
 
-New-Item -ItemType Directory -Force -Path $SkillsDir | Out-Null
-Copy-Item "$ScriptDir\SKILL.md" "$SkillsDir\SKILL.md" -Force
-Write-Host "[OK] Skill installed to $SkillsDir" -ForegroundColor Green
+if (Test-Path $SkillsDir) { Remove-Item $SkillsDir -Recurse -Force }
+Copy-Item $ScriptDir $SkillsDir -Recurse -Force
+# Remove non-skill files from the installed copy
+Remove-Item "$SkillsDir\.git" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item "$SkillsDir\scripts" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item "$SkillsDir\LICENSE" -Force -ErrorAction SilentlyContinue
+Remove-Item "$SkillsDir\README.md" -Force -ErrorAction SilentlyContinue
+Remove-Item "$SkillsDir\CHANGELOG.md" -Force -ErrorAction SilentlyContinue
+Remove-Item "$SkillsDir\.gitignore" -Force -ErrorAction SilentlyContinue
+Write-Host "[OK] Skill + references installed to $SkillsDir" -ForegroundColor Green
 
-# Step 4: Set up Cursor debug port
-$currentVal = [Environment]::GetEnvironmentVariable("OPENCLI_CDP_ENDPOINT", "User")
-if (-not $currentVal) {
-    [Environment]::SetEnvironmentVariable("OPENCLI_CDP_ENDPOINT", "http://127.0.0.1:9226", "User")
-    $env:OPENCLI_CDP_ENDPOINT = "http://127.0.0.1:9226"
-    Write-Host "[OK] OPENCLI_CDP_ENDPOINT set permanently" -ForegroundColor Green
-} else {
-    Write-Host "[OK] OPENCLI_CDP_ENDPOINT already set: $currentVal" -ForegroundColor Green
+# Step 4: Detect Cursor debug port
+$actualPort = $null
+$listening = netstat -an | Select-String "LISTENING" | Select-String "922"
+if ($listening) {
+    $match = [regex]::Match($listening.ToString(), '127\.0\.0\.1:(\d+)')
+    if ($match.Success) { $actualPort = $match.Groups[1].Value }
+}
+if (-not $actualPort) { $actualPort = $CursorPort }
+Write-Host "[OK] Cursor debug port: $actualPort" -ForegroundColor Green
+
+# Step 5: Set OPENCLI_CDP_ENDPOINT at BOTH User and Machine level
+$endpoint = "http://127.0.0.1:$actualPort"
+[Environment]::SetEnvironmentVariable("OPENCLI_CDP_ENDPOINT", $endpoint, "User")
+try { [Environment]::SetEnvironmentVariable("OPENCLI_CDP_ENDPOINT", $endpoint, "Machine") } catch {}
+$env:OPENCLI_CDP_ENDPOINT = $endpoint
+Write-Host "[OK] OPENCLI_CDP_ENDPOINT = $endpoint (User + Machine)" -ForegroundColor Green
+
+# Step 6: Update SKILL.md with detected port
+$skillFile = "$SkillsDir\SKILL.md"
+if (Test-Path $skillFile) {
+    (Get-Content $skillFile -Raw) -replace '127\.0\.0\.1:9224', "127.0.0.1:$actualPort" | Set-Content $skillFile -NoNewline
+    Write-Host "[OK] SKILL.md updated with port $actualPort" -ForegroundColor Green
 }
 
-# Step 5: Update Cursor shortcut
-$desktopLnk = "$env:USERPROFILE\Desktop\Cursor.lnk"
-if (Test-Path $desktopLnk) {
-    $shell = New-Object -ComObject WScript.Shell
-    $lnk = $shell.CreateShortcut($desktopLnk)
-    if ($lnk.Arguments -notmatch "remote-debugging-port") {
-        $lnk.Arguments = ($lnk.Arguments + " --remote-debugging-port=9226").Trim()
-        $lnk.Save()
-        Write-Host "[OK] Cursor shortcut updated with debug port" -ForegroundColor Green
-    } else {
-        Write-Host "[OK] Cursor shortcut already has debug port" -ForegroundColor Green
+# Step 7: Update Cursor shortcuts
+foreach ($lnkPath in @(
+    "$env:USERPROFILE\Desktop\Cursor.lnk",
+    "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Cursor\Cursor.lnk"
+)) {
+    if (Test-Path $lnkPath) {
+        $shell = New-Object -ComObject WScript.Shell
+        $lnk = $shell.CreateShortcut($lnkPath)
+        if ($lnk.Arguments -notmatch "remote-debugging-port") {
+            $lnk.Arguments = ($lnk.Arguments + " --remote-debugging-port=$actualPort").Trim()
+            $lnk.Save()
+            Write-Host "[OK] Updated shortcut: $lnkPath" -ForegroundColor Green
+        }
     }
-}
-
-# Step 6: Restart gateway
-try {
-    Write-Host "[INFO] Restarting OpenClaw gateway..." -ForegroundColor Yellow
-    openclaw gateway restart 2>$null
-    Write-Host "[OK] Gateway restarted" -ForegroundColor Green
-} catch {
-    Write-Host "[WARN] Gateway restart failed - restart manually" -ForegroundColor Yellow
 }
 
 Write-Host ""
 Write-Host "=== Installation Complete ===" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Verify: openclaw skills list | Select-String opencli"
+Write-Host "Installed files:" -ForegroundColor White
+Get-ChildItem $SkillsDir -Recurse -File | ForEach-Object { Write-Host "  $($_.FullName)" }
 Write-Host ""
-Write-Host "Remaining manual step:" -ForegroundColor Yellow
-Write-Host "  Install Browser Bridge extension for Bilibili commands:"
+Write-Host "Verify:" -ForegroundColor White
+Write-Host "  openclaw skills list | Select-String opencli"
+Write-Host ""
+Write-Host "Manual step: Install Browser Bridge Chrome extension" -ForegroundColor Yellow
 Write-Host "  Download from: https://github.com/jackwener/opencli/releases"
-Write-Host "  Unzip, then load in chrome://extensions (Developer mode)"
+Write-Host "  Unzip -> chrome://extensions -> Developer mode -> Load unpacked"
