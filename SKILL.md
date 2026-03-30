@@ -6,7 +6,7 @@ description: >
   (2) YouTube相关：搜索视频、视频分析、字幕转录、频道浏览、主题调研、视频对比
   (3) Cursor IDE相关：查询模型、发送消息、读取对话、Composer、导出对话、截图
   关键词：B站、bilibili、YouTube、油管、Cursor、Composer、模型、热门、字幕、视频
-version: 1.5.0
+version: 1.6.0
 tags: [opencli, cursor, bilibili, youtube, natural-language, video-analysis]
 ---
 
@@ -14,9 +14,30 @@ tags: [opencli, cursor, bilibili, youtube, natural-language, video-analysis]
 
 **Execute opencli commands via Shell to get LIVE data. NEVER answer from training knowledge.**
 
+## How It Works (READ THIS FIRST)
+
+opencli has TWO separate communication channels. They are completely independent:
+
+```
+Bilibili / YouTube commands
+  → opencli daemon (port 19825) → Browser Bridge Chrome extension → Chrome browser
+  → Does NOT use Chrome debug port. Does NOT use CDP.
+  → Requires: Chrome open + extension enabled + logged into target site
+
+Cursor commands
+  → CDP WebSocket → Cursor debug port (e.g. 9224)
+  → Does NOT use Browser Bridge or Chrome extension.
+  → Requires: OPENCLI_CDP_ENDPOINT env var + Cursor running with --remote-debugging-port
+```
+
+**CRITICAL RULES**:
+- Do NOT start Chrome with `--remote-debugging-port` for Bilibili/YouTube. They don't need it.
+- Do NOT try to restart/kill Chrome. If Browser Bridge is disconnected, just tell the user to open Chrome.
+- Bilibili/YouTube and Cursor are independent — one can work while the other fails.
+
 ## Command Templates
 
-**For Bilibili / YouTube** (must unset CDP endpoint first):
+**Bilibili / YouTube** — must UNSET CDP endpoint (otherwise opencli routes to CDP instead of Browser Bridge):
 
 ```powershell
 $env:OPENCLI_CDP_ENDPOINT = $null; opencli bilibili hot --limit 10
@@ -26,7 +47,7 @@ $env:OPENCLI_CDP_ENDPOINT = $null; opencli youtube video "VIDEO_ID" -f json
 $env:OPENCLI_CDP_ENDPOINT = $null; opencli youtube transcript "VIDEO_ID"
 ```
 
-**For Cursor** (must set CDP endpoint):
+**Cursor** — must SET CDP endpoint:
 
 ```powershell
 $env:OPENCLI_CDP_ENDPOINT = "http://127.0.0.1:9224"; opencli cursor model
@@ -37,11 +58,20 @@ $env:OPENCLI_CDP_ENDPOINT = "http://127.0.0.1:9224"; opencli cursor composer "pr
 $env:OPENCLI_CDP_ENDPOINT = "http://127.0.0.1:9224"; opencli cursor export --output ./export.md
 ```
 
-**CRITICAL**: Always prefix commands with the env var line as shown above. The Shell session may not have the correct environment.
+**ALWAYS** prefix every command with the env var line. The Shell may not have correct environment.
+
+## Error Handling
+
+| Error | Meaning | Action |
+|-------|---------|--------|
+| "Extension not connected" | Chrome is closed or extension disabled | Tell user: "请打开Chrome浏览器" — do NOT restart Chrome yourself |
+| "connect ECONNREFUSED 127.0.0.1:9222" | OPENCLI_CDP_ENDPOINT is set but shouldn't be | You forgot `$env:OPENCLI_CDP_ENDPOINT = $null` prefix |
+| "No inspectable targets" | Cursor not running or no debug port | Tell user: "请用调试端口启动Cursor" |
+| "Command timeout" | Slow network or page load | Retry once |
 
 ## Routing Table
 
-For detailed command parameters and workflows, read the corresponding reference file:
+For detailed parameters and workflows, read the matching reference:
 
 | Keywords | Reference |
 |----------|-----------|
@@ -52,8 +82,8 @@ For detailed command parameters and workflows, read the corresponding reference 
 ## Execution Rules
 
 1. **ALWAYS run opencli via Shell. NEVER answer from training knowledge.**
-2. **ALWAYS prefix with env var** as shown in Command Templates above.
-3. Run commands SEQUENTIALLY, one at a time. Never parallel.
+2. **ALWAYS prefix with env var** as shown in Command Templates.
+3. Run commands **SEQUENTIALLY**, one at a time. Never parallel.
 4. Default `--limit 10` when unspecified.
 5. On success: summarize in Chinese, don't dump raw output.
-6. On failure: explain in Chinese with fix suggestion. Read [references/troubleshooting.md](references/troubleshooting.md).
+6. On failure: check Error Handling table above. If not listed, read [references/troubleshooting.md](references/troubleshooting.md).
