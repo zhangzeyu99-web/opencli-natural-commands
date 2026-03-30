@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0] - 2026-03-23
+
+### Changed
+- SKILL.md rewritten in English to reduce token consumption (~40% smaller)
+- Added critical batch execution rule: all opencli browser commands must run SEQUENTIALLY to prevent Browser Bridge disconnection
+- Chinese preserved only for activation keywords and intent mapping table
+
 ## [1.2.0] - 2026-03-23
 
 ### Added
