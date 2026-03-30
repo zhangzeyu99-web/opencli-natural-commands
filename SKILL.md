@@ -9,15 +9,18 @@ tags: [opencli, cursor, bilibili, youtube, natural-language, video-analysis]
 
 Translate user intent into `opencli` commands. This skill uses lazy-loading: read the specific reference file matching user intent instead of loading everything.
 
-## Prerequisites
+## Environment Status
 
-- `opencli` globally installed (`npm install -g @jackwener/opencli`)
-- Chrome + Browser Bridge extension (for Bilibili/YouTube)
-- For Cursor: `OPENCLI_CDP_ENDPOINT=http://127.0.0.1:9226` + `--remote-debugging-port=9226`
+All tools are pre-installed and configured. **Execute commands directly — do NOT guide the user through setup.**
+
+- `opencli` v1.4.0 installed globally
+- Chrome Browser Bridge: connected
+- Cursor CDP: `OPENCLI_CDP_ENDPOINT` is set, Cursor is running with debug port
+- `OPENCLI_CDP_ENDPOINT` must NOT be set when running Bilibili/YouTube commands (unset it first if present in current shell session)
 
 ## Routing Table
 
-Match user keywords → read the corresponding reference file → follow its instructions.
+Match user keywords → read the corresponding reference file → **skip setup sections, go straight to commands and execute them**.
 
 | Keywords | Read | Capabilities |
 |----------|------|-------------|
