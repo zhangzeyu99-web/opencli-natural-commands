@@ -1,8 +1,8 @@
 ---
 name: opencli-natural-commands
-description: "用自然语言操控 Cursor IDE 和 Bilibili。当用户提到 B站/bilibili/热门/字幕/下载/Cursor控制/Composer/对话导出 等关键词时使用此技能。"
-version: 1.0.0
-tags: [opencli, cursor, bilibili, natural-language]
+description: "用自然语言操控 Cursor IDE、Bilibili 和 YouTube。支持 B站/YouTube 视频搜索、分析、字幕获取、主题研究（多视频综合分析）、频道浏览，以及 Cursor IDE 远程控制。"
+version: 1.2.0
+tags: [opencli, cursor, bilibili, youtube, natural-language, video-analysis]
 ---
 
 # OpenCLI 自然语言指令中心
@@ -21,7 +21,7 @@ tags: [opencli, cursor, bilibili, natural-language]
 当用户消息包含以下关键词时激活此技能：
 
 **B站**：B站、bilibili、热门、排行榜、弹幕、字幕、UP主、BV号、收藏、历史记录、动态、下载视频
-**YouTube**：YouTube、油管、视频分析、转录、字幕翻译、视频笔记、视频总结、剪辑、podcast
+**YouTube**：YouTube、油管、视频分析、转录、字幕翻译、视频笔记、视频总结、剪辑、podcast、调研、频道、卖点、评测、对比
 **Cursor**：控制Cursor、发给Cursor、Composer、对话历史、导出对话、AI模型、截图
 
 ## B站命令
@@ -68,22 +68,69 @@ opencli youtube transcript "URL" --lang en    # 指定语言
 opencli youtube transcript "URL" --mode raw   # 原始时间戳模式
 ```
 
-### YouTube 视频分析工作流
+### YouTube 主题研究工作流（核心功能）
 
-当用户说"分析这个YouTube视频"时，组合执行：
+当用户说类似"看看 kingshot 的 YouTube 视频总结这个游戏卖点"时，执行多视频综合分析：
+
+**步骤1：搜索相关视频**
+```bash
+opencli youtube search "kingshot game review" --limit 10 -f json
+```
+
+**步骤2：批量获取元数据**（description 和 keywords 信息量极大）
+```bash
+# 对搜索结果中相关度高的视频逐个执行
+opencli youtube video "VIDEO_ID" -f json
+```
+
+**步骤3：尝试获取字幕（三级回退）**
+```bash
+# 优先：opencli 内置
+opencli youtube transcript "VIDEO_ID"
+# 回退：yt-dlp（内置不可用时）
+yt-dlp --write-auto-sub --sub-lang en,zh-Hans --skip-download -o "%(id)s" "URL"
+# 兜底：跳过字幕，仅用 description + keywords 分析（告知用户）
+```
+
+**步骤4：AI 综合分析**
+汇总所有视频的 title/description/keywords/transcript，生成：
+- 主题总结（一段话概括）
+- 核心卖点/观点（分条列出）
+- 多视频共识（大家都提到的）
+- 差异观点（有争议的部分）
+- 推荐视频（最值得看哪几个）
+
+### YouTube 频道浏览
+
+当用户说"这个频道最近发了什么"或"看看XXX频道的内容"时：
+```bash
+# 用搜索模拟频道浏览（YouTube 无直接 user-videos 命令）
+opencli youtube search "频道名" --limit 15 -f json
+# 批量获取元数据
+opencli youtube video "VIDEO_ID" -f json   # 对每个结果执行
+```
+AI 总结：频道主题方向、最热视频、内容风格、更新频率
+
+### 单视频深度分析
+
+当用户说"分析这个YouTube视频"时：
 1. `youtube video` → 获取元数据（标题、频道、播放量、描述、关键词）
-2. `youtube transcript` → 获取完整字幕文本
-3. AI 分析生成：内容大纲、核心要点、关键时间点、一句话总结
+2. `youtube transcript`（含回退策略）→ 获取字幕文本
+3. AI 生成：内容大纲、核心要点、关键时间点、一句话总结
 
-### 衍生功能
+### 自然语言 → 工作流映射
 
-| 用户意图 | 做什么 |
-|---------|--------|
-| "帮我把视频做成学习笔记" | 元数据+字幕 → AI 生成结构化笔记 |
-| "翻译这个英文视频" | 获取英文字幕 → AI 逐段翻译 |
-| "整理成会议纪要" | 字幕(含说话人) → AI 生成纪要 |
-| "基于视频写篇文章" | 分析内容 → AI 生成文章大纲+素材 |
-| "对比分析这几个视频" | 分别获取字幕 → AI 对比观点 |
+| 用户意图 | 执行的工作流 |
+|---------|------------|
+| "看看 kingshot YouTube 视频总结游戏卖点" | 主题研究（search → 批量 video → transcript → AI 综合） |
+| "帮我调研一下 XXX 话题" | 主题研究 |
+| "这个频道最近发了什么" | 频道浏览（search 频道名 → 批量 video → AI 总结） |
+| "对比这几个视频的观点" | 多视频 video + transcript → AI 对比 |
+| "分析这个YouTube视频" | 单视频深度分析 |
+| "帮我把视频做成学习笔记" | 元数据 + 字幕 → AI 结构化笔记 |
+| "翻译这个英文视频" | 字幕 → AI 逐段翻译 |
+| "整理成会议纪要" | 字幕(含说话人) → AI 纪要 |
+| "基于视频写篇文章" | 分析内容 → AI 文章大纲 + 素材 |
 | "剪辑精华片段" | 联动 youtube-clipper 技能 |
 
 ## 输出格式
@@ -98,6 +145,8 @@ opencli youtube transcript "URL" --mode raw   # 原始时间戳模式
 4. 涉及账号操作先确认
 5. 复合操作拆分执行（如"搜B站XXX然后下载第一个"= 搜索 + 下载两步）
 6. 下载操作告知文件保存位置和大小
+7. YouTube 字幕三级回退：opencli transcript → yt-dlp --write-auto-sub → 仅用 description/keywords 分析（告知用户数据来源）
+8. 主题研究时，从搜索结果中优先选取播放量高、时长适中（5-30分钟）、标题相关度高的视频，跳过 Shorts 和直播回放
 
 ## 参考文档
 

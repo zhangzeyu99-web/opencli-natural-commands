@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0] - 2026-03-23
+
+### Added
+- YouTube 主题研究工作流：多视频搜索→批量元数据→字幕获取→AI 综合分析报告
+- YouTube 频道浏览：模拟 B站 user-videos 的频道内容浏览能力
+- yt-dlp 字幕三级回退策略：opencli → yt-dlp → 仅元数据分析
+- 主题研究视频筛选规则：优先高播放、适中时长，跳过 Shorts 和直播回放
+- 新自然语言触发词：调研、频道、卖点、评测、对比
+
+### Changed
+- SKILL.md description 更新，涵盖 YouTube 和主题研究能力
+- 版本号升至 1.2.0
+
 ## [1.1.0] - 2026-03-23
 
 ### Added

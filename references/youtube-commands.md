@@ -101,32 +101,173 @@ opencli youtube transcript xxx -f json
 
 ---
 
-## 视频分析工作流
+## 字幕获取三级回退策略
+
+YouTube 字幕接口在某些网络环境下受限。技能使用三级回退确保最大可用性：
+
+### 第一级：opencli 内置（优先）
+
+```bash
+opencli youtube transcript "VIDEO_ID" -f json
+```
+
+InnerTube Android API 直接获取，速度最快、格式最好（自动分段合并+说话人检测）。
+
+### 第二级：yt-dlp 回退
+
+当 opencli 返回 "No captions available" 时：
+
+```bash
+yt-dlp --write-auto-sub --sub-lang en,zh-Hans --skip-download -o "%(id)s" "VIDEO_URL"
+```
+
+这会在当前目录生成 `.vtt` 字幕文件。然后读取文件内容供 AI 分析。
+
+yt-dlp 安装：`pip install yt-dlp`
+
+### 第三级：仅元数据分析（兜底）
+
+当字幕完全无法获取时，依赖 `youtube video` 返回的 description 和 keywords 做分析。YouTube 视频的 description 通常包含大量结构化信息（时间戳、要点、链接），keywords 反映核心主题。此时必须明确告知用户"分析仅基于视频描述和关键词，未获取到完整字幕"。
+
+---
+
+## 主题研究工作流（多视频综合分析）
+
+对标 B站的 `search → user-videos → subtitle` 链式操作。这是本技能最强大的 YouTube 功能。
+
+### 真实示例
+
+**用户**："看看 kingshot 的 YouTube 视频总结这个游戏的主要卖点"
+
+**执行过程**：
+
+#### 步骤1：搜索相关视频
+
+```bash
+opencli youtube search "kingshot game review" --limit 10 -f json
+```
+
+从结果中筛选：
+- 优先播放量高的视频（说明内容被认可）
+- 优先时长 5-30 分钟的视频（信息密度适中）
+- 跳过 Shorts（时长 < 1分钟）和直播回放（时长 > 2小时）
+- 选取 3-5 个最相关的视频
+
+#### 步骤2：批量获取元数据
+
+```bash
+opencli youtube video "VIDEO_ID_1" -f json
+opencli youtube video "VIDEO_ID_2" -f json
+opencli youtube video "VIDEO_ID_3" -f json
+# ... 对每个筛选出的视频执行
+```
+
+重点关注每个视频的：
+- `description`：通常包含视频要点、时间戳目录、结论
+- `keywords`：反映核心主题标签
+- `views` + `likes`：衡量内容质量和受众认可度
+
+#### 步骤3：获取字幕（含回退）
+
+对每个视频依次尝试三级回退策略。即使部分视频无法获取字幕也继续——有元数据就够做基础分析。
+
+#### 步骤4：AI 综合分析
+
+将所有视频的信息汇总，生成结构化报告：
+
+```
+## kingshot 游戏主要卖点（基于 N 个 YouTube 视频分析）
+
+### 一句话总结
+XXX
+
+### 核心卖点（多视频共识）
+1. XXX — 被 N/M 个视频提到
+2. XXX — 被 N/M 个视频提到
+...
+
+### 差异化观点
+- 视频A认为 XXX，但视频B认为 YYY
+
+### 负面评价/顾虑
+- XXX
+
+### 推荐观看
+- 最全面的评测：[视频标题](URL)
+- 最新的内容：[视频标题](URL)
+
+### 数据来源
+- 分析基于 X 个视频，其中 Y 个获取了完整字幕，Z 个仅基于描述
+```
+
+---
+
+## 频道内容浏览
+
+对标 B站的 `user-videos` 命令。YouTube 没有直接的频道视频 API，用搜索模拟。
+
+### 使用场景
+
+```
+用户："看看 Linus Tech Tips 频道最近发了什么"
+用户："这个频道都做什么内容"
+```
+
+### 执行步骤
+
+```bash
+# 步骤1：搜索频道相关视频
+opencli youtube search "Linus Tech Tips" --limit 15 -f json
+
+# 步骤2：批量获取元数据
+opencli youtube video "VIDEO_ID" -f json   # 对每个结果执行
+```
+
+### AI 总结输出
+
+```
+## 频道概览：Linus Tech Tips
+
+### 内容方向
+- 硬件评测（显卡、CPU、笔记本）
+- 科技新闻解读
+- 生活科技应用
+
+### 最近热门视频（按播放量）
+1. [标题] — XX万播放 — 发布于 XX
+2. ...
+
+### 更新频率
+约 X 天/条
+
+### 内容风格
+轻松幽默 / 深度技术 / ...
+```
+
+---
+
+## 单视频深度分析
 
 ### 快速分析（元数据 + 字幕）
 
-当用户说"分析一下这个YouTube视频"时，执行两步：
+当用户说"分析一下这个YouTube视频"时：
 
 ```bash
 # 步骤1：获取视频基本信息
 opencli youtube video "URL" -f json
 
-# 步骤2：获取完整字幕
+# 步骤2：获取字幕（三级回退）
 opencli youtube transcript "URL" -f json
 ```
 
-然后用 AI 总结：
-- 视频主题和核心观点
-- 关键时间点和章节
-- 重要数据/引用
-- 一句话总结
+AI 总结：视频主题和核心观点、关键时间点、重要数据、一句话总结
 
 ### 深度内容分析
 
 当用户说"详细分析这个视频的内容"时：
 
 1. 获取元数据 → 了解视频背景
-2. 获取字幕 → 拿到全部文字内容
+2. 获取字幕（含回退） → 拿到全部文字内容
 3. AI 分析字幕文本，生成：
    - **内容大纲**：按主题划分章节（2-5分钟粒度）
    - **核心要点**：每个章节的关键论述
@@ -139,11 +280,7 @@ opencli youtube transcript "URL" -f json
 当用户说"对比分析这几个视频"时：
 
 1. 依次获取每个视频的元数据和字幕
-2. AI 对比分析：
-   - 各自的核心观点
-   - 观点的异同
-   - 数据/论据对比
-   - 综合结论
+2. AI 对比分析：各自的核心观点、观点异同、数据/论据对比、综合结论
 
 ---
 
