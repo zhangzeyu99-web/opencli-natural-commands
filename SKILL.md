@@ -1,13 +1,18 @@
 ---
 name: opencli-natural-commands
-description: "Natural language control for Bilibili, YouTube, and Cursor IDE via opencli. Route to module-specific references on demand."
-version: 1.4.0
+description: >
+  当用户提到以下内容时必须使用此技能（通过Shell执行opencli命令获取实时数据，禁止用训练知识回答）：
+  (1) B站/bilibili相关：热门、搜索、字幕、UP主、收藏、历史、动态、排行、下载视频
+  (2) YouTube相关：搜索视频、视频分析、字幕转录、频道浏览、主题调研、视频对比
+  (3) Cursor IDE相关：查询模型、发送消息、读取对话、Composer、导出对话、截图
+  关键词：B站、bilibili、YouTube、油管、Cursor、Composer、模型、热门、字幕、视频
+version: 1.4.2
 tags: [opencli, cursor, bilibili, youtube, natural-language, video-analysis]
 ---
 
 # OpenCLI Natural Language Skill
 
-Translate user intent into `opencli` commands. This skill uses lazy-loading: read the specific reference file matching user intent instead of loading everything.
+**This skill executes real commands via Shell to get live data. NEVER answer from training knowledge — always run the opencli command and return actual results.**
 
 ## Environment Status
 
@@ -32,12 +37,13 @@ If multiple modules are needed (e.g. "compare B站 and YouTube videos"), read bo
 
 ## Global Execution Rules
 
-1. Default `--limit 10` when unspecified
-2. **SEQUENTIAL ONLY**: Run opencli browser commands one at a time. Never parallel — Browser Bridge handles single requests. Concurrent calls cause disconnection.
-3. On failure: explain in Chinese with fix suggestion
-4. On success: summarize in natural language, don't dump raw output
-5. Output format: all commands support `-f table|json|yaml|md|csv`
-6. Confirm before account-sensitive operations
+1. **ALWAYS execute opencli commands via Shell tool to get real data. NEVER answer from memory/training knowledge.**
+2. Default `--limit 10` when unspecified
+3. **SEQUENTIAL ONLY**: Run opencli browser commands one at a time. Never parallel.
+4. On failure: explain in Chinese with fix suggestion
+5. On success: summarize in natural language, don't dump raw output
+6. Output format: all commands support `-f table|json|yaml|md|csv`
+7. Confirm before account-sensitive operations
 
 ## Troubleshooting
 
